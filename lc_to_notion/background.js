@@ -1,13 +1,14 @@
-const NOTION_TOKEN = 'your_notion_token'; 
-const DATABASE_ID = 'your_database_id';
+// please replace the NOTION_TOKEN, DATABASE_ID and PROXY_URL with your own values
+const NOTION_TOKEN = ''; 
+const DATABASE_ID = '';
 const PROXY_URL = 'http://localhost:3000/notion'; 
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'saveToNotion') {
     const { title, content, difficulty, topics, url, problemNumber, code } = request.data;
-    console.log("Received data in background script:", request.data); // 打印接收到的数据
+    console.log("Received data in background script:", request.data); 
 
-    createNotionPage(title, content, difficulty, topics, url, parseInt(problemNumber, 10), code) // 确保 problemNumber 是数字
+    createNotionPage(title, content, difficulty, topics, url, parseInt(problemNumber, 10), code) // ensure problemNumber is a number
       .then(notionResponse => {
         console.log("Notion response:", notionResponse);
         sendResponse({ success: true, data: notionResponse });
@@ -17,24 +18,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: false, error: error.message });
       });
 
-    return true; // 需要返回true以便异步响应
+    return true; // keep the message channel open until the promise is resolved
   }
 });
 
 async function createNotionPage(title, content, difficulty, topics, url, problemNumber, code) {
-  const apiUrl = `${PROXY_URL}/v1/pages`; // 使用代理服务器的URL
+  const apiUrl = `${PROXY_URL}/v1/pages`; // use the proxy server URL
   const headers = {
     'Authorization': `Bearer ${NOTION_TOKEN}`,
     'Content-Type': 'application/json',
     'Notion-Version': '2022-06-28'
   };
 
-  // 创建数据库条目
+  // create a new database entry
   const databaseEntryBody = {
     parent: { database_id: DATABASE_ID },
     properties: {
       'Problem': { 
-        number: problemNumber // 确保 problemNumber 是数字
+        number: problemNumber
       },
       'Name': { 
         title: [{ 
@@ -73,21 +74,21 @@ async function createNotionPage(title, content, difficulty, topics, url, problem
   const createData = await createResponse.json();
   const pageId = createData.id;
 
-  console.log("Created page with ID:", pageId);
+  // console.log("Created page with ID:", pageId);
 
-  // 更新页面内容
   return updateNotionPage(content, code, pageId);
 }
 
+// update the newly created page with the content and code
 async function updateNotionPage(content, code, pageId) {
-  const apiUrl = `${PROXY_URL}/v1/blocks/${pageId}/children`; // 使用代理服务器的URL
+  const apiUrl = `${PROXY_URL}/v1/blocks/${pageId}/children`; // use the proxy server URL
   const headers = {
     'Authorization': `Bearer ${NOTION_TOKEN}`,
     'Content-Type': 'application/json',
     'Notion-Version': '2022-06-28'
   };
 
-  // 更新页面内容
+  // update the page content with the problem description and code
   const updateBody = {
     children: [
       {

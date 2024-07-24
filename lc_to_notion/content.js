@@ -1,16 +1,17 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	if (request.action === 'fetchLeetCodeData') {
-	  // 从URL中提取标题
+	  // get the title from the URL
 	  const url = window.location.href;
 	  const titleMatch = url.match(/leetcode.com\/problems\/(.*?)\//);
   
 	  let title = '';
 	  let problemNumber = '';
 	  if (titleMatch) {
-		title = titleMatch[1].replace(/-/g, ' '); // 将URL中的横线替换为空格
+		// replace dashes with spaces
+		title = titleMatch[1].replace(/-/g, ' '); 
 	  }
   
-	  // 使用从URL中提取的标题来选择相应的元素
+	  // get the title 
 	  const titleElement = document.querySelector(`a[href*="/problems/${titleMatch[1]}"]`);
   
 	  if (titleElement) {
@@ -22,12 +23,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		}
 	  }
   
-	  // 使用正确的选择器来提取数据
-	  const contentElement = document.querySelector('.elfjS'); // 问题描述的选择器
-	  const difficultyElement = document.querySelector('div[class*="text-difficulty-"]'); // 选择难度元素的选择器
-	  const topicsContainer = document.querySelector('.mt-2.flex.flex-wrap.gap-1.pl-7'); // topics容器的选择器
-      const topicsElements = topicsContainer ? topicsContainer.querySelectorAll('a') : []; // 精确选择topics的a标签
-	  const codeContainer = document.querySelector('.view-lines'); // 选择代码元素的选择器
+	  // get the content, difficulty, topics, and code
+	  const contentElement = document.querySelector('.elfjS'); 
+	  const difficultyElement = document.querySelector('div[class*="text-difficulty-"]'); 
+	  const topicsContainer = document.querySelector('.mt-2.flex.flex-wrap.gap-1.pl-7'); 
+      const topicsElements = topicsContainer ? topicsContainer.querySelectorAll('a') : []; 
+	  const codeContainer = document.querySelector('.view-lines'); 
   
 	  const content = contentElement ? contentElement.innerText : '';
 	  const difficulty = difficultyElement ? difficultyElement.innerText : '';
@@ -40,7 +41,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 
   
-	  // 打印提取到的数据到控制台
+	  // print the data to the console
 	  console.log("Title:", title);
 	  console.log("Content:", content);
 	  console.log("Difficulty:", difficulty);
@@ -49,9 +50,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	  console.log("URL:", url);
 	  console.log("Problem Number:", problemNumber);
   
-	  // 检查是否获取到了所有数据
+	  // check if all necessary data is available
 	  if (title && content && difficulty && topics && code && url && problemNumber) {
-		// 发送数据到后台脚本
+		// send the data to the background script
 		chrome.runtime.sendMessage({
 		  action: 'saveToNotion',
 		  data: {
