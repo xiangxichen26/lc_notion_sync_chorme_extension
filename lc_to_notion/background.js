@@ -1,14 +1,14 @@
 // please replace the NOTION_TOKEN, DATABASE_ID and PROXY_URL with your own values
 const NOTION_TOKEN = ''; 
 const DATABASE_ID = '';
-const PROXY_URL = 'http://localhost:3000/notion'; 
+const PROXY_URL = 'http://localhost:3000/notion';  // or your deployed proxy server URL
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'saveToNotion') {
-    const { title, content, difficulty, topics, url, problemNumber, code } = request.data;
-    console.log("Received data in background script:", request.data); 
+    const { title, contentBlocks, difficulty, topics, url, problemNumber, code } = request.data;
+    console.log("Received data in background script:", request.data);
 
-    createNotionPage(title, content, difficulty, topics, url, parseInt(problemNumber, 10), code) // ensure problemNumber is a number
+    createNotionPage(title, contentBlocks, difficulty, topics, url, parseInt(problemNumber, 10), code)
       .then(notionResponse => {
         console.log("Notion response:", notionResponse);
         sendResponse({ success: true, data: notionResponse });
@@ -18,43 +18,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ success: false, error: error.message });
       });
 
-    return true; // keep the message channel open until the promise is resolved
+    return true;
   }
 });
 
-async function createNotionPage(title, content, difficulty, topics, url, problemNumber, code) {
-  const apiUrl = `${PROXY_URL}/v1/pages`; // use the proxy server URL
+async function createNotionPage(title, contentBlocks, difficulty, topics, url, problemNumber, code) {
+  const apiUrl = `${PROXY_URL}/v1/pages`;
   const headers = {
     'Authorization': `Bearer ${NOTION_TOKEN}`,
     'Content-Type': 'application/json',
     'Notion-Version': '2022-06-28'
   };
 
-  // create a new database entry
   const databaseEntryBody = {
     parent: { database_id: DATABASE_ID },
     properties: {
-      'Problem': { 
-        number: problemNumber
-      },
-      'Name': { 
-        title: [{ 
-          text: { 
-            content: title 
-          } 
-        }] 
-      },
-      'Link': { 
-        url: url 
-      },
-      'Difficulty': { 
-        select: { 
-          name: difficulty 
-        } 
-      },
-      'Topic': { 
-        multi_select: topics.split(', ').map(topic => ({ name: topic })) 
-      }
+      'Problem': { number: problemNumber },
+      'Name': { title: [{ text: { content: title } }] },
+      'Link': { url: url },
+      'Difficulty': { select: { name: difficulty } },
+      'Topic': { multi_select: topics.split(', ').map(topic => ({ name: topic })) }
     }
   };
 
@@ -74,111 +57,52 @@ async function createNotionPage(title, content, difficulty, topics, url, problem
   const createData = await createResponse.json();
   const pageId = createData.id;
 
-  // console.log("Created page with ID:", pageId);
-
-  return updateNotionPage(content, code, pageId);
+  return updateNotionPage(contentBlocks, code, pageId);
 }
 
-// update the newly created page with the content and code
-async function updateNotionPage(content, code, pageId) {
-  const apiUrl = `${PROXY_URL}/v1/blocks/${pageId}/children`; // use the proxy server URL
+async function updateNotionPage(contentBlocks, code, pageId) {
+  const apiUrl = `${PROXY_URL}/v1/blocks/${pageId}/children`;
   const headers = {
     'Authorization': `Bearer ${NOTION_TOKEN}`,
     'Content-Type': 'application/json',
     'Notion-Version': '2022-06-28'
   };
 
-  // update the page content with the problem description and code
-  const updateBody = {
-    children: [
-      {
-        object: 'block',
-        type: 'heading_2',
-        heading_2: { 
-          rich_text: [{ 
-            type: 'text', 
-            text: { 
-              content: 'Problem' 
-            } 
-          }] 
-        }
-      },
-      {
-        object: 'block',
-        type: 'paragraph',
-        paragraph: { 
-          rich_text: [{ 
-            type: 'text', 
-            text: { 
-              content: content 
-            },
-          }]
-        }
-      },
-      {
-        object: 'block',
-        type: 'heading_2',
-        heading_2: { 
-          rich_text: [{ 
-            type: 'text', 
-            text: { 
-              content: 'Solution' 
-            } 
-          }] 
-        }
-      },
-      {
-        object: 'block',
-        type: 'heading_2',
-        heading_2: { 
-          rich_text: [{ 
-            type: 'text', 
-            text: { 
-              content: 'Clarification & Difficulties' 
-            } 
-          }] 
-        }
-      },
-      {
-        object: 'block',
-        type: 'heading_2',
-        heading_2: { 
-          rich_text: [{ 
-            type: 'text', 
-            text: { 
-              content: 'Code' 
-            } 
-          }] 
-        }
-      }, 
-      {
-        object: 'block',
-        type: 'paragraph',
-        paragraph: { 
-          rich_text: [{ 
-            type: 'text', 
-            text: { 
-              content: ""
-            } 
-          }] 
-        }
-      },
-      {
-        object: 'block',
-        type: 'code',
-        code: { 
-          rich_text: [{ 
-            type: 'text', 
-            text: { 
-              content: code 
-            } 
-          }], 
-          language: 'python', // you can change the language here
-          caption: []
-        }
-      }
-    ]
-  };
+  const children = [];
+
+  children.push({
+    object: 'block',
+    type: 'heading_2',
+    heading_2: { rich_text: [{ type: 'text', text: { content: 'Problem' } }] }
+  });
+
+  children.push(...contentBlocks);
+
+  children.push({
+    object: 'block',
+    type: 'heading_2',
+    heading_2: { rich_text: [{ type: 'text', text: { content: 'Solution' } }] }
+  });
+
+  children.push({
+    object: 'block',
+    type: 'heading_2',
+    heading_2: { rich_text: [{ type: 'text', text: { content: 'Clarification & Difficulties' } }] }
+  });
+
+  children.push({
+    object: 'block',
+    type: 'heading_2',
+    heading_2: { rich_text: [{ type: 'text', text: { content: 'Code' } }] }
+  });
+
+  children.push({
+    object: 'block',
+    type: 'code',
+    code: { rich_text: [{ type: 'text', text: { content: code } }], language: 'python' }
+  });
+
+  const updateBody = { children };
 
   console.log("Updating page content:", JSON.stringify(updateBody, null, 2));
 
