@@ -36,9 +36,9 @@ https://www.notion.so/0619986c00ba45c9bea6db875920ab30?v=73a2ebfcd91744e2a08154f
 ![image](https://github.com/user-attachments/assets/1cff2ebb-8464-4958-a471-0ab5767a50d6)
 6. Connect your database with your api
 ![image](https://github.com/user-attachments/assets/17810d8b-cf5c-46eb-872a-af3ddbb16c72)
-7. Navigate to the **leetcode_to_notion** directory:
+7. Navigate to the **lc_to_notion** directory:
 ```
-cd leetcode_to_notion
+cd lc_to_notion
 ```
 8. Navigate to the **background.js** file and add your notion api token, database id and port
 ```
@@ -70,7 +70,7 @@ npm start
 ### Step 4: Set up the Chrome Extension
 1. Open Chrome and go to **chrome://extensions/**.
 2. Enable "**Developer mode**" (toggle on the top right).
-3. Click "Load unpacked" and select the **leetcode_to_notion** directory.
+3. Click "Load unpacked" and select the **lc_to_notion** directory.
 4. Update the **background.js file** in the extension to point to your proxy server URL:
 ```
 const PROXY_URL = 'http://localhost:3000/notion'; // or your deployed server URL
